@@ -26,6 +26,27 @@ To install go-moneywell for the api, use `go get`:
 
     go get github.com/lieut-data/go-moneywell/api
 
+### Running
+
+To analyze a MoneyWell document for problems, use [moneywelldoctor](#moneywelldoctor):
+
+    moneywelldoctor Finances.moneywell
+
+To dump various data from a MoneyWell document, use [moneywellcli](#moneywellcli):
+
+    moneywellcli -file Finances.moneywell -list accounts
+    moneywellcli -file Finances.moneywell -list buckets
+    moneywellcli -file Finances.moneywell -list tags
+    moneywellcli -file Finances.moneywell -list account-groups
+    moneywellcli -file Finances.moneywell -list bucket-groups
+    moneywellcli -file Finances.moneywell -list transactions
+
+Optionally filter transactions by account, bucket or tag:
+
+    moneywellcli -file Finances.moneywell -list transactions -account "Chequing"
+    moneywellcli -file Finances.moneywell -list transactions -bucket "Salary"
+    moneywellcli -file Finances.moneywell -list transactions -tag "family_vacation_2017"
+
 ## Command-line Tools
 
 ### [moneywelldoctor](cmd/moneywelldoctor)
@@ -64,15 +85,15 @@ transactions identified must be then fixed within MoneyWell itself.
 The bundled `moneywellcli` is largely an exercise of the [api](api)
 package. It supports various operations, dumping the resulting data structures to STDOUT:
 
-    moneywellcli -file Test.moneywell -list account-groups
-    moneywellcli -file Test.moneywell -list accounts
-    moneywellcli -file Test.moneywell -list bucket-groups
-    moneywellcli -file Test.moneywell -list buckets
-    moneywellcli -file Test.moneywell -list tags
-    moneywellcli -file Test.moneywell -list transactions
-    moneywellcli -file Test.moneywell -list transactions -account "Chequing Account"
-    moneywellcli -file Test.moneywell -list transactions -bucket "Salary"
-    moneywellcli -file Test.moneywell -list transactions -tag "family_vacation_2017"
+    moneywellcli -file Finances.moneywell -list accounts
+    moneywellcli -file Finances.moneywell -list buckets
+    moneywellcli -file Finances.moneywell -list tags
+    moneywellcli -file Finances.moneywell -list account-groups
+    moneywellcli -file Finances.moneywell -list bucket-groups
+    moneywellcli -file Finances.moneywell -list transactions
+    moneywellcli -file Finances.moneywell -list transactions -account "Chequing"
+    moneywellcli -file Finances.moneywell -list transactions -bucket "Salary"
+    moneywellcli -file Finances.moneywell -list transactions -tag "family_vacation_2017"
 
 The API to this command line tool is subject to change. A future revision will likely support CSV 
 encoding for export to spreadsheets along with JSON encoding for integration with other scripts.
