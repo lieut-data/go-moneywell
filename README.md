@@ -17,18 +17,14 @@ also using OSX, so use the [Homebrew](https://brew.sh/) package manager and simp
 
 ### Installation
 
-To install go-moneywell, use `go get`:
+To install go-moneywell for the command line tools, use `go install`:
 
-    go get github.com/lieut-data/go-moneywell
+    go install github.com/lieut-data/go-moneywell/cmd/moneywellcli
+    go install github.com/lieut-data/go-moneywell/cmd/moneywelldoctor
 
-The following package will be made available:
+To install go-moneywell for the api, use `go get`:
 
-    github.com/lieut-data/go-moneywell/api
-
-along with the following command line tools:
-
-    github.com/lieut-data/go-moneywell/cmd/moneywellcli
-    github.com/lieut-data/go-moneywell/cmd/moneywelldoctor
+    go get github.com/lieut-data/go-moneywell/api
 
 ## Command-line Tools
 
