@@ -143,11 +143,20 @@ func GetAccountsMap(database *sql.DB) (map[int64]Account, error) {
 	return accountsMap, nil
 }
 
-// GetAccountBalance uses the given transactions to compute the current balance of an account.
+// GetAccountBalance uses the given transactions to compute the balance of an account at the given
+// time.
 func GetAccountBalance(account Account, transactions []Transaction) money.Money {
 	balance := money.Money{}
 
 	for _, transaction := range transactions {
+		// Ignore voided and pending transactions.
+		switch transaction.Status {
+		case TransactionStatusVoided:
+			fallthrough
+		case TransactionStatusPending:
+			continue
+		}
+
 		// Split transactions result in both a parent transaction and children
 		// transactions. Exclude the children and count only the parent transaction to
 		// avoid double summing.

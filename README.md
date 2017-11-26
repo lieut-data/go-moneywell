@@ -136,6 +136,7 @@ Some random notes on things in the API yet to be tackled:
 - [ ] Fix sorting of buckets outside of bucket groups.
 - [ ] Make the bucket event order fully match MoneyWell's own listing within a given day.
 - [ ] Determine why the sqlite3 driver leaves persistentStore-wal and persistentStore-shm around.
+- [ ] Update moneywelldoctor to warn about scheduled transactions in the past
 
 ## Authors
 

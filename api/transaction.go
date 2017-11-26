@@ -103,6 +103,8 @@ type Transaction struct {
 	SplitParent      int64
 	IsSplit          bool
 	IsBucketOptional bool
+	IsPending        bool
+	Status           int
 	Payee            string
 	Memo             string
 }
@@ -111,6 +113,15 @@ const (
 	TransactionTypeDeposit    = 0
 	TransactionTypeWithdrawal = 1
 	TransactionTypeCheck      = 2
+)
+
+const (
+	TransactionStatusNone       = -1
+	TransactionStatusVoided     = 0
+	TransactionStatusReconciled = 1
+	TransactionStatusCleared    = 2
+	TransactionStatusOpen       = 3
+	TransactionStatusPending    = 4
 )
 
 func (t *Transaction) IsTransfer() bool {
@@ -155,6 +166,7 @@ func GetTransactions(database *sql.DB) ([]Transaction, error) {
                     LIMIT 1
                 ) IS NOT NULL AS IsSplit,
                 za.ZISBUCKETOPTIONAL,
+                COALESCE(za.ZSTATUS, -1),
                 za.ZPAYEE,
                 za.ZMEMO,
                 zac.ZCURRENCYCODE
@@ -182,7 +194,7 @@ func GetTransactions(database *sql.DB) ([]Transaction, error) {
 	transactions := []Transaction{}
 
 	var primaryKey, amountRaw int64
-	var dateymd, transactionType int
+	var dateymd, transactionType, status int
 	var bucket, account, transferAccount, transferSibling, splitParent sql.NullInt64
 	var isSplit, isBucketOptional bool
 	var payee, memo, currencyCode sql.NullString
@@ -199,6 +211,7 @@ func GetTransactions(database *sql.DB) ([]Transaction, error) {
 			&splitParent,
 			&isSplit,
 			&isBucketOptional,
+			&status,
 			&payee,
 			&memo,
 			&currencyCode,
@@ -227,6 +240,7 @@ func GetTransactions(database *sql.DB) ([]Transaction, error) {
 			SplitParent:      splitParent.Int64,
 			IsSplit:          isSplit,
 			IsBucketOptional: isBucketOptional,
+			Status:           status,
 			Payee:            payee.String,
 			Memo:             memo.String,
 		})

@@ -132,6 +132,14 @@ func GetBucketEvents(
 	for _, transaction := range transactions {
 		transaction := transaction
 
+		// Ignore voided and pending transactions.
+		switch transaction.Status {
+		case TransactionStatusVoided:
+			fallthrough
+		case TransactionStatusPending:
+			continue
+		}
+
 		if transaction.Bucket == bucket.PrimaryKey {
 			events = append(events, &transaction)
 		}
