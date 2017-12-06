@@ -61,3 +61,17 @@ func GetAccountGroups(database *sql.DB) ([]AccountGroup, error) {
 
 	return accountGroups, nil
 }
+
+func GetAccountGroupsMap(database *sql.DB) (map[int64]AccountGroup, error) {
+	accountGroups, err := GetAccountGroups(database)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	accountGroupsMap := make(map[int64]AccountGroup, len(accountGroups))
+	for _, accountGroup := range accountGroups {
+		accountGroupsMap[accountGroup.PrimaryKey] = accountGroup
+	}
+
+	return accountGroupsMap, nil
+}
