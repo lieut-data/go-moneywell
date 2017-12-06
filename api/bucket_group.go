@@ -71,3 +71,17 @@ func GetBucketGroups(database *sql.DB) ([]BucketGroup, error) {
 
 	return bucketGroups, nil
 }
+
+func GetBucketGroupsMap(database *sql.DB) (map[int64]BucketGroup, error) {
+	bucketGroups, err := GetBucketGroups(database)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	bucketGroupsMap := make(map[int64]BucketGroup, len(bucketGroups))
+	for _, bucketGroup := range bucketGroups {
+		bucketGroupsMap[bucketGroup.PrimaryKey] = bucketGroup
+	}
+
+	return bucketGroupsMap, nil
+}
