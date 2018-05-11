@@ -140,7 +140,7 @@ Some random notes on things in the API yet to be tackled:
 
 ## Authors
 
-* Jesse Hallam
+* Jesse Hallam ([keybase.io/lieutdata](https://keybase.io/lieutdata))
 
 ## License
 
