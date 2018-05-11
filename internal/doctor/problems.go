@@ -35,6 +35,9 @@ const (
 	ProblemBucketOptionalInsideCashFlow = 7
 	// ProblemMissingBucketInsideCashFlow identifies a transaction missing an assigned bucket.
 	ProblemMissingBucketInsideCashFlow = 8
+	// ProblemBucketOutsideCashFlow identifies a non-transfer transaction incorrectly having
+	// a transaction assigned.
+	ProblemBucketOutsideCashFlow = 9
 )
 
 // ProblematicTranscations represents a transaction diagnosed with a potential problem.
@@ -122,6 +125,19 @@ func GetProblematicTransactions(
 		problematicTransactions = append(
 			problematicTransactions,
 			problematicMissingBucketTransactions...,
+		)
+
+		problematicInvalidBucketTransactions, err := checkInvalidBucketTransaction(
+			account,
+			transactions,
+			transaction,
+		)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		problematicTransactions = append(
+			problematicTransactions,
+			problematicInvalidBucketTransactions...,
 		)
 	}
 
@@ -327,6 +343,38 @@ func checkMissingBucketTransaction(
 			Problem:     ProblemMissingBucketInsideCashFlow,
 			Description: fmt.Sprintf(
 				"%s is not assigned to a bucket",
+				describeTransaction("transaction", account, transaction),
+			),
+		},
+	}, nil
+}
+
+func checkInvalidBucketTransaction(
+	account api.Account,
+	transactions []api.Transaction,
+	transaction api.Transaction,
+) ([]ProblematicTransaction, error) {
+	// Assume transfer and split transactions are checked elsewhere.
+	if transaction.IsTransfer() || transaction.IsSplit {
+		return nil, nil
+	}
+
+	// If a bucket is not assigned, it's not invalid!
+	if transaction.Bucket == 0 {
+		return nil, nil
+	}
+
+	// If the account is inside the cash flow, having a bucket assigned is normal.
+	if account.IncludeInCashFlow {
+		return nil, nil
+	}
+
+	return []ProblematicTransaction{
+		{
+			Transaction: transaction.PrimaryKey,
+			Problem:     ProblemBucketOutsideCashFlow,
+			Description: fmt.Sprintf(
+				"%s is incorrectly assigned to a bucket",
 				describeTransaction("transaction", account, transaction),
 			),
 		},

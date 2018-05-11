@@ -70,6 +70,11 @@ func TestDiagnose(t *testing.T) {
 			Problem:     doctor.ProblemTransferFromCashFlowAssignedBucket,
 			Description: "transfer[21] on 2017-11-19 against Outside Cash Flow #2 for $25.00 CAD (Transfer money out of cash flow) from account outside cash flow to account inside cash flow should not be assigned to a bucket",
 		},
+		{
+			Transaction: 29,
+			Problem:     doctor.ProblemBucketOutsideCashFlow,
+			Description: "transaction[29] on 2018-05-10 against Outside Cash Flow #1 for -$10.00 CAD is incorrectly assigned to a bucket",
+		},
 	}
 
 	assert.Equal(t, expectedProblematicTransactions, actualProblematicTransactions)
