@@ -13,6 +13,7 @@ func TestGetTransactionTags(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	transactionTags, err := api.GetTransactionTags(database)
 	assert.NoError(t, err)
@@ -33,6 +34,7 @@ func TestGetTransactionTagMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	transactionTagMap, err := api.GetTransactionTagMap(database)
 	assert.NoError(t, err)
@@ -51,6 +53,7 @@ func TestGetTagTransactionMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	transactionTagMap, err := api.GetTagTransactionMap(database)
 	assert.NoError(t, err)

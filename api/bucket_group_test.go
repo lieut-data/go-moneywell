@@ -13,6 +13,7 @@ func TestGetBucketGroups(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	bucketGroups, err := api.GetBucketGroups(database)
 	assert.NoError(t, err)
@@ -43,6 +44,7 @@ func TestGetBucketGroupsMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	bucketGroups, err := api.GetBucketGroupsMap(database)
 	assert.NoError(t, err)

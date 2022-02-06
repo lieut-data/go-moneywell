@@ -13,6 +13,7 @@ func TestGetAccountGroups(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	accountGroups, err := api.GetAccountGroups(database)
 	assert.NoError(t, err)
@@ -36,6 +37,7 @@ func TestGetAccountGroupsMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	accountGroups, err := api.GetAccountGroupsMap(database)
 	assert.NoError(t, err)

@@ -14,6 +14,7 @@ func TestGetAccounts(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	accounts, err := api.GetAccounts(database)
 	assert.NoError(t, err)
@@ -83,6 +84,7 @@ func TestGetAccountsMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	accounts, err := api.GetAccountsMap(database)
 	assert.NoError(t, err)
@@ -152,6 +154,7 @@ func TestGetAccountBalance(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	accounts, err := api.GetAccountsMap(database)
 	assert.NoError(t, err)

@@ -14,6 +14,7 @@ func TestGetBuckets(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	buckets, err := api.GetBuckets(database)
 	assert.NoError(t, err)
@@ -61,6 +62,7 @@ func TestGetBucketsMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	buckets, err := api.GetBucketsMap(database)
 	assert.NoError(t, err)
@@ -112,6 +114,7 @@ func TestGetBucketBalance(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	settings, err := api.GetSettings(database)
 	assert.NoError(t, err)

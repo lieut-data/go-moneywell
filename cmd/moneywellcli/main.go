@@ -32,6 +32,12 @@ func main() {
 		fmt.Printf("failed to open database: %v\n", err)
 		return
 	}
+	defer func() {
+		if err := database.Close(); err != nil {
+			fmt.Printf("failed to close database: %v\n", err)
+			return
+		}
+	}()
 
 	switch list {
 	case "account-groups":
@@ -46,15 +52,14 @@ func main() {
 		err = cli.ListTags(database, verbose)
 	case "transactions":
 		err = cli.ListTransactions(database, account, bucket, tag, verbose)
+	case "recurrence-rules":
+		err = cli.ListRecurrenceRules(database, verbose)
+	case "spending-plan":
+		err = cli.ListSpendingPlanEvents(database, bucket, verbose)
 	}
 
 	if err != nil {
 		fmt.Printf("cli failed: %v\n", err)
-		return
-	}
-
-	if err := database.Close(); err != nil {
-		fmt.Printf("failed to close database: %v\n", err)
 		return
 	}
 }

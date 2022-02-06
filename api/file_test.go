@@ -11,11 +11,13 @@ import (
 func TestOpenDocument(t *testing.T) {
 	t.Parallel()
 
-	_, err := api.OpenDocument("Test.moneywell")
+	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	database.Close()
 
 	_, err = api.OpenDocument("Test.moneywell/StoreContent/persistentStore")
 	assert.NoError(t, err)
+	database.Close()
 
 	_, err = api.OpenDocument("NoSuchFile.moneywell")
 	assert.Error(t, err)

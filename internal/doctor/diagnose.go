@@ -16,6 +16,7 @@ func Diagnose(moneywellPath string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to open %s", moneywellPath)
 	}
+	defer database.Close()
 
 	settings, err := api.GetSettings(database)
 	if err != nil {

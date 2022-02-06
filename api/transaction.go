@@ -86,11 +86,6 @@ import (
 //      ZSALEAMOUNTSTRING VARCHAR,
 //      ZSALECURRENCYCODE1 VARCHAR
 //  );
-//
-// By analysis, Z_ENT appears to represent the type of activity in question:
-//  4: Placeholders for favourite transactions
-//  6: Spending plan amounts
-//  7: Transactions
 type Transaction struct {
 	PrimaryKey       int64
 	Date             time.Time
@@ -179,13 +174,13 @@ func GetTransactions(database *sql.DB) ([]Transaction, error) {
             LEFT JOIN
                 ZACTIVITY zat ON ( zat.Z_PK = za.ZTRANSFERSIBLING )
             WHERE
-                za.Z_ENT = 7
+                za.Z_ENT = ?
             ORDER BY
                 za.ZDATEYMD ASC,
                 zacg.ZSEQUENCE ASC,
                 zac.ZSEQUENCE ASC,
                 za.ZTYPE ASC
-        `)
+        `, ActivityTypeTransactions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query transactions")
 	}

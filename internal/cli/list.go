@@ -3,6 +3,7 @@ package cli
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 
 	"github.com/pkg/errors"
 
@@ -95,9 +96,9 @@ func ListBucketGroups(database *sql.DB, verbose bool) error {
 	var lastBucketType int64
 	for _, bucketGroup := range bucketGroups {
 		if lastBucketType == 0 || lastBucketType != bucketGroup.Type {
-			if bucketGroup.Type == 1 {
+			if bucketGroup.Type == api.BucketGroupTypeIncome {
 				fmt.Printf("Income\n")
-			} else if bucketGroup.Type == 2 {
+			} else if bucketGroup.Type == api.BucketGroupTypeExpense {
 				fmt.Printf("Expense\n")
 			}
 			lastBucketType = bucketGroup.Type
@@ -322,6 +323,108 @@ func ListTransactions(
 			transaction.Amount,
 			primaryKey,
 		)
+	}
+
+	return nil
+}
+
+func ListRecurrenceRules(
+	database *sql.DB,
+	verbose bool,
+) error {
+	recurrenceRules, err := api.GetRecurrenceRules(database)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch recurrence rules")
+	}
+
+	sort.Sort(api.RecurrenceRuleSort(recurrenceRules))
+
+	for _, recurrenceRule := range recurrenceRules {
+		primaryKey := ""
+		if verbose {
+			primaryKey = fmt.Sprintf(" [%d]", recurrenceRule.PrimaryKey)
+		}
+
+		fmt.Printf("%s%s\n", api.DescribeRecurrenceRule(recurrenceRule), primaryKey)
+	}
+
+	return nil
+}
+
+func ListSpendingPlanEvents(
+	database *sql.DB,
+	bucketFilter string,
+	verbose bool,
+) error {
+	spendingPlanEvents, err := api.GetSpendingPlan(database)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch spending plan")
+	}
+
+	recurrenceRulesMap, err := api.GetRecurrenceRulesMap(database)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch recurrence rules")
+	}
+
+	bucketsMap, err := api.GetBucketsMap(database)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch buckets map")
+	}
+
+	bucketGroups, err := api.GetBucketGroups(database)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch bucket groups")
+	}
+
+	mappedBucketGroups := make(map[int64]api.BucketGroup, len(bucketGroups))
+	for _, bucketGroup := range bucketGroups {
+		mappedBucketGroups[bucketGroup.PrimaryKey] = bucketGroup
+	}
+
+	bucketGroupTypes := []int64{api.BucketGroupTypeIncome, api.BucketGroupTypeExpense}
+	for _, bucketGroupType := range bucketGroupTypes {
+		headerPrinted := false
+
+		for _, event := range spendingPlanEvents {
+			primaryKey := ""
+			if verbose {
+				primaryKey = fmt.Sprintf(" [%d]", event.PrimaryKey)
+			}
+
+			recurrenceRule := recurrenceRulesMap[event.RecurrenceRule]
+			fillRecurrenceRule := recurrenceRulesMap[event.FillRecurrenceRule]
+
+			bucket := bucketsMap[event.Bucket]
+			if len(bucketFilter) > 0 && bucket.Name != bucketFilter {
+				continue
+			}
+
+			bucketGroup := mappedBucketGroups[bucket.BucketGroup]
+			if bucketGroup.Type != bucketGroupType {
+				continue
+			}
+
+			if !headerPrinted {
+				if bucketGroup.Type == api.BucketGroupTypeIncome {
+					fmt.Printf("Income\n")
+				} else if bucketGroup.Type == api.BucketGroupTypeExpense {
+					fmt.Printf("Expense\n")
+				}
+
+				headerPrinted = true
+			}
+
+			fmt.Printf(
+				"    %s\t%s\t%s\t%s\t%s\t%s%s\n",
+				event.Name,
+				event.Date,
+				bucket.Name,
+				event.Amount,
+				api.DescribeRecurrenceRule(recurrenceRule),
+				api.DescribeFillRecurrenceRule(fillRecurrenceRule),
+				primaryKey,
+			)
+		}
 	}
 
 	return nil

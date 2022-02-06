@@ -12,6 +12,7 @@ import (
 func TestDiagnose(t *testing.T) {
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	settings, err := api.GetSettings(database)
 	assert.NoError(t, err)

@@ -13,6 +13,7 @@ func TestGetTags(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	tags, err := api.GetTags(database)
 	assert.NoError(t, err)
@@ -32,6 +33,7 @@ func TestGetTagsMap(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	tagsMap, err := api.GetTagsMap(database)
 	assert.NoError(t, err)

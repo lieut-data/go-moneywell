@@ -15,6 +15,7 @@ func TestGetBucketTransfers(t *testing.T) {
 
 	database, err := api.OpenDocument("Test.moneywell")
 	assert.NoError(t, err)
+	defer database.Close()
 
 	bucketTransfers, err := api.GetBucketTransfers(database)
 	assert.NoError(t, err)
