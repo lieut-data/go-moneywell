@@ -172,10 +172,24 @@ func (p *Decoder) unmarshal(pval cfValue, val reflect.Value) {
 			panic(incompatibleTypeError)
 		}
 	case cfData:
-		if val.Kind() == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-			val.SetBytes([]byte(pval))
-		} else {
+		if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
 			panic(incompatibleTypeError)
+		}
+
+		if typ.Elem().Kind() != reflect.Uint8 {
+			panic(incompatibleTypeError)
+		}
+
+		b := []byte(pval)
+		switch val.Kind() {
+		case reflect.Slice:
+			val.SetBytes(b)
+		case reflect.Array:
+			if val.Len() < len(b) {
+				panic(fmt.Errorf("plist: attempted to unmarshal %d bytes into a byte array of size %d", len(b), val.Len()))
+			}
+			sval := reflect.ValueOf(b)
+			reflect.Copy(val, sval)
 		}
 	case cfUID:
 		if val.Type() == uidType {
@@ -257,10 +271,7 @@ func (p *Decoder) unmarshalDictionary(dict *cfDictionary, val reflect.Value) {
 			sval := dict.values[i]
 
 			keyv := reflect.ValueOf(k).Convert(typ.Key())
-			mapElem := val.MapIndex(keyv)
-			if !mapElem.IsValid() {
-				mapElem = reflect.New(typ.Elem()).Elem()
-			}
+			mapElem := reflect.New(typ.Elem()).Elem()
 
 			p.unmarshal(sval, mapElem)
 			val.SetMapIndex(keyv, mapElem)
