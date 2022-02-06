@@ -40,6 +40,8 @@ To dump various data from a MoneyWell document, use [moneywellcli](#moneywellcli
     moneywellcli -file Finances.moneywell -list account-groups
     moneywellcli -file Finances.moneywell -list bucket-groups
     moneywellcli -file Finances.moneywell -list transactions
+    moneywellcli -file Finances.moneywell -list recurrence-rules
+    moneywellcli -file Finances.moneywell -list spending-plan
 
 Optionally filter transactions by account, bucket or tag:
 
@@ -94,6 +96,9 @@ package. It supports various operations, dumping the resulting data structures t
     moneywellcli -file Finances.moneywell -list transactions -account "Chequing"
     moneywellcli -file Finances.moneywell -list transactions -bucket "Salary"
     moneywellcli -file Finances.moneywell -list transactions -tag "family_vacation_2017"
+    moneywellcli -file Finances.moneywell -list recurrence-rules
+    moneywellcli -file Finances.moneywell -list spending-plan
+    moneywellcli -file Finances.moneywell -list spending-plan -bucket "Tech"
 
 The API to this command line tool is subject to change. A future revision will likely support CSV 
 encoding for export to spreadsheets along with JSON encoding for integration with other scripts.
@@ -130,7 +135,6 @@ remove or rename tags in bulk.
 
 Some random notes on things in the API yet to be tackled:
 - [ ] Add support for querying favourite transactions.
-- [ ] Add support for querying spending plan.
 - [ ] Fix order of hidden buckets relative to other buckets.
 - [ ] Fix sorting of accounts outside of account groups.
 - [ ] Fix sorting of buckets outside of bucket groups.
