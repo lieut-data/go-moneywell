@@ -40,6 +40,7 @@ type Bucket struct {
 	Name            string
 	StartingBalance money.Money
 	CurrencyCode    string
+	IsHidden 	bool
 }
 
 // GetBuckets fetches the set of buckets in a MoneyWell document, sorted by the display order
@@ -52,7 +53,8 @@ func GetBuckets(database *sql.DB) ([]Bucket, error) {
                 zb.ZBUCKETGROUP, 
                 zb.ZNAME,
                 CAST(ROUND(zbsb.ZAMOUNT * 100) AS INTEGER),
-                zb.ZCURRENCYCODE
+                zb.ZCURRENCYCODE,
+		zb.ZISHIDDEN
             FROM 
                 ZBUCKET zb
             LEFT JOIN
@@ -77,6 +79,7 @@ func GetBuckets(database *sql.DB) ([]Bucket, error) {
 	var primaryKey, bucketType int64
 	var name, currencyCode string
 	var bucketGroup, startingBalance sql.NullInt64
+	var isHidden sql.NullBool
 	for rows.Next() {
 		err := rows.Scan(
 			&primaryKey,
@@ -85,6 +88,7 @@ func GetBuckets(database *sql.DB) ([]Bucket, error) {
 			&name,
 			&startingBalance,
 			&currencyCode,
+			&isHidden,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to scan bucket")
@@ -99,6 +103,7 @@ func GetBuckets(database *sql.DB) ([]Bucket, error) {
 				Currency: currencyCode,
 				Amount:   startingBalance.Int64,
 			},
+			IsHidden: isHidden.Bool,
 		})
 	}
 
