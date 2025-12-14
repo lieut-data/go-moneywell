@@ -144,6 +144,17 @@ func GetProblematicTransactions(
 	return problematicTransactions, nil
 }
 
+func getChildrenTransactions(transactions []api.Transaction, transaction api.Transaction) []api.Transaction {
+	var children []api.Transaction
+	for _, child := range transactions {
+		if child.SplitParent == transaction.PrimaryKey {
+			children = append(children, child)
+		}
+	}
+
+	return children
+}
+
 func checkSplitTransaction(
 	account api.Account,
 	transactions []api.Transaction,
@@ -203,7 +214,7 @@ func checkSplitTransaction(
 
 func checkTransferTransaction(
 	accounts []api.Account,
-	account api.Account,
+	fromAccount api.Account,
 	transactions []api.Transaction,
 	transaction api.Transaction,
 ) ([]ProblematicTransaction, error) {
@@ -211,62 +222,130 @@ func checkTransferTransaction(
 		return nil, nil
 	}
 
-	// Assume split transactions are checked elsewhere.
-	if transaction.IsSplit {
-		return nil, nil
+	children := getChildrenTransactions(transactions, transaction)
+	hasChildrenWithoutBucket := false
+	hasChildrenWithBucket := false
+
+	for _, child := range children {
+		if child.Bucket == 0 {
+			hasChildrenWithoutBucket = true
+		} else {
+			hasChildrenWithBucket = true
+		}
 	}
 
 	problematicTransactions := []ProblematicTransaction{}
 
-	transferAccount, err := getAccount(accounts, transaction.TransferAccount)
+	toAccount, err := getAccount(accounts, transaction.TransferAccount)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// A transfer between accounts inside the cash flow should not have a bucket assigned.
-	if account.IncludeInCashFlow && transferAccount.IncludeInCashFlow && transaction.Bucket != 0 {
-		problematicTransactions = append(problematicTransactions, ProblematicTransaction{
-			Transaction: transaction.PrimaryKey,
-			Problem:     ProblemTransferInsideCashFlowAssignedBucket,
-			Description: fmt.Sprintf(
-				"%s between accounts in the cash flow should not be assigned to a bucket",
-				describeTransaction("transfer", account, transaction),
-			),
-		})
+	if fromAccount.IncludeInCashFlow && toAccount.IncludeInCashFlow {
+		if transaction.Bucket != 0 {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferInsideCashFlowAssignedBucket,
+				Description: fmt.Sprintf(
+					"%s between accounts in the cash flow should not be assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		} else if hasChildrenWithBucket {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferInsideCashFlowAssignedBucket,
+				Description: fmt.Sprintf(
+					"%s between accounts in the cash flow has children which should not be assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
 	}
 
 	// A transfer between accounts outside the cash flow should not have a bucket assigned.
-	if !account.IncludeInCashFlow && !transferAccount.IncludeInCashFlow && transaction.Bucket != 0 {
-		problematicTransactions = append(problematicTransactions, ProblematicTransaction{
-			Transaction: transaction.PrimaryKey,
-			Problem:     ProblemTransferOutsideCashFlowAssignedBucket,
-			Description: fmt.Sprintf(
-				"%s between accounts outside the cash flow should not be assigned to a bucket",
-				describeTransaction("transfer", account, transaction),
-			),
-		})
+	if !fromAccount.IncludeInCashFlow && !toAccount.IncludeInCashFlow {
+		if transaction.Bucket != 0 {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferOutsideCashFlowAssignedBucket,
+				Description: fmt.Sprintf(
+					"%s between accounts outside the cash flow should not be assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		} else if hasChildrenWithBucket {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferOutsideCashFlowAssignedBucket,
+				Description: fmt.Sprintf(
+					"%s between accounts outside the cash flow has children should not be assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
 	}
 
 	// A transfer between accounts with one in the cash flow and one outside should have a
 	// bucket assigned only on the account inside the cash flow.
-	if account.IncludeInCashFlow && !transferAccount.IncludeInCashFlow && transaction.Bucket == 0 {
-		problematicTransactions = append(problematicTransactions, ProblematicTransaction{
-			Transaction: transaction.PrimaryKey,
-			Problem:     ProblemTransferOutOfCashFlowMissingBucket,
-			Description: fmt.Sprintf(
-				"%s from account inside cash flow to account outside cash flow should be assigned to a bucket",
-				describeTransaction("transfer", account, transaction),
-			),
-		})
-	} else if !account.IncludeInCashFlow && transferAccount.IncludeInCashFlow && transaction.Bucket != 0 {
-		problematicTransactions = append(problematicTransactions, ProblematicTransaction{
-			Transaction: transaction.PrimaryKey,
-			Problem:     ProblemTransferFromCashFlowAssignedBucket,
-			Description: fmt.Sprintf(
-				"%s from account outside cash flow to account inside cash flow should not be assigned to a bucket",
-				describeTransaction("transfer", account, transaction),
-			),
-		})
+	if fromAccount.IncludeInCashFlow && !toAccount.IncludeInCashFlow {
+		if transaction.Bucket == 0 && !transaction.IsSplit {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferOutOfCashFlowMissingBucket,
+				Description: fmt.Sprintf(
+					"%s from account inside cash flow to account outside cash flow should be assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
+
+		if transaction.Bucket != 0 && transaction.IsSplit {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferOutOfCashFlowMissingBucket,
+				Description: fmt.Sprintf(
+					"%s from account inside cash flow to account outside cash flow should not be assigned to a bucket: its children should be assigned a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
+
+		if transaction.IsSplit && hasChildrenWithoutBucket {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferOutOfCashFlowMissingBucket,
+				Description: fmt.Sprintf(
+					"%s from account inside cash flow to account outside cash flow should have all children assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
+	}
+
+	if !fromAccount.IncludeInCashFlow && toAccount.IncludeInCashFlow {
+		if transaction.Bucket != 0 {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferFromCashFlowAssignedBucket,
+				Description: fmt.Sprintf(
+					"%s from account outside cash flow to account inside cash flow should not be assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
+
+		if hasChildrenWithBucket {
+			problematicTransactions = append(problematicTransactions, ProblematicTransaction{
+				Transaction: transaction.PrimaryKey,
+				Problem:     ProblemTransferFromCashFlowAssignedBucket,
+				Description: fmt.Sprintf(
+					"%s from account outside cash flow to account inside cash flow should not not have children assigned to a bucket",
+					describeTransaction("transfer", fromAccount, transaction),
+				),
+			})
+		}
 	}
 
 	return problematicTransactions, nil
